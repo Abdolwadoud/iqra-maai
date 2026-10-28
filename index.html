@@ -1,0 +1,24 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مكتبة اقرأ معي — نواكشوط، موريتانيا</title>
+<meta name="description" content="مكتبة اقرأ معي في نواكشوط: تصفح الكتب واستفسر عن توفرها عبر واتساب.">
+<meta property="og:title" content="مكتبة اقرأ معي — نواكشوط"><meta property="og:image" content="assets/logo-blue.png">
+<link rel="icon" href="assets/logo-blue.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap"><link rel="stylesheet" href="style.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"مكتبة اقرأ معي","alternateName":"Iqra Ma3i Library","telephone":"+22236517051","address":{"@type":"PostalAddress","addressLocality":"نواكشوط","addressCountry":"MR"}}</script></head>
+<body><div id="hdr"></div>
+<div class="hero" id="hero"><div class="w"><h1>كل كتاب يفتح لك عالمًا جديدًا</h1><p>اكتشف الكتب التي تلهمك، وابدأ رحلتك في عالم المعرفة مع مكتبة اقرأ معي.</p>
+<form class="sb" action="books.html" role="search"><label for="q" style="position:absolute;left:-9999px">ابحث عن كتاب</label><input id="q" name="q" type="search" placeholder="ابحث بعنوان الكتاب أو المؤلف"><button class="btn l">بحث</button></form>
+<div class="row"><a class="btn l" href="books.html">اكتشف الكتب</a><a class="btn o" style="color:#fff;border-color:#fff" href="#contact">تواصل معنا</a></div></div></div>
+<section class="latest"><div class="w"><div class="section-head"><div><span class="eyebrow">اختيارات تستحق وقتك</span><h2>أحدث الكتب</h2><p>اكتشف عناوين جديدة أضيفت إلى رفوف مكتبة اقرأ معي.</p></div><a class="text-link" href="books.html">عرض جميع الكتب <span aria-hidden="true">←</span></a></div><div class="grid" id="new" aria-live="polite"><div class="msg">جارٍ التحميل…</div></div></div></section>
+<section class="alt" id="cats"><div class="w"><div class="section-head"><div><span class="eyebrow">اعثر على قراءتك التالية</span><h2>تصفّح حسب التصنيف</h2><p>مسارات مختلفة للمعرفة، والإلهام، والمتعة.</p></div></div><div class="chips" id="cl"></div></div></section>
+<section id="about"><div class="w about-panel"><div class="about-mark" aria-hidden="true">اقرأ<br>معي</div><div><span class="eyebrow">حكايتنا تبدأ بكتاب</span><h2>من نحن</h2><p id="ab"></p><a class="text-link" href="#contact">تعرّف على المكتبة <span aria-hidden="true">←</span></a></div></div></section>
+<section class="alt" id="contact"><div class="w"><div class="section-head"><div><span class="eyebrow">نحن هنا لمساعدتك</span><h2>تواصل مع المكتبة</h2><p>للاستفسار عن كتاب أو التأكد من توفره، تواصل معنا مباشرة.</p></div></div><div class="info"><div><p><strong>العنوان:</strong> <span id="ad"></span></p><p><strong>رمز الموقع:</strong> <span dir="ltr">32HM+J9F</span></p><p id="hr"></p><p dir="ltr" style="text-align:end;font-weight:800;font-size:22px" id="ph"></p>
+<div class="row"><a class="btn" id="tel">اتصل بالمكتبة</a><a class="btn w2" id="wa" target="_blank" rel="noopener">واتساب</a><a class="btn o" href="" id="mo" target="_blank" rel="noopener">افتح الموقع في الخرائط</a><a class="btn o" id="md" target="_blank" rel="noopener">احصل على الاتجاهات</a></div></div></div></div></section>
+<div id="ftr"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="config.js"></script><script src="app.js"></script>
+<script>(async()=>{const s=await settings();chrome(s);document.title=s.library_name+" — نواكشوط، موريتانيا";
+if(s.hero_image_url)$("#hero").style.backgroundImage=`url("${s.hero_image_url}")`;
+$("#ab").textContent=s.description||"";$("#ad").textContent=s.address;$("#ph").textContent=s.phone;$("#hr").innerHTML=s.opening_hours?"<strong>ساعات العمل:</strong> "+esc(s.opening_hours):"";
+$("#tel").href="tel:+"+digits(s.phone);$("#wa").href=wa(s.whatsapp,"السلام عليكم، أود الاستفسار.");$("#mo").href=mapOpen;$("#md").href=mapDir;
+const[b,c]=await Promise.all([sb.from("books").select(BSEL).eq("is_published",true).order("created_at",{ascending:false}).limit(8),sb.from("categories").select("*").order("name")]);
+$("#new").innerHTML=b.error?'<div class="msg err">تعذر تحميل الكتب. حاول لاحقًا.</div>':b.data.length?b.data.map(x=>card(x,s)).join(""):'<div class="msg">لم تُضف كتب بعد.</div>';
+$("#cl").innerHTML=(c.data||[]).map(x=>`<a class="chip" href="books.html?cat=${x.id}">${esc(x.name)}</a>`).join("")||'<span class="m">لا توجد تصنيفات بعد.</span>'})();</script></body></html>

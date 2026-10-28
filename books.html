@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>جميع الكتب — مكتبة اقرأ معي</title><meta name="description" content="تصفح كتب مكتبة اقرأ معي في نواكشوط وابحث بالعنوان أو المؤلف أو التصنيف.">
+<link rel="icon" href="assets/logo-blue.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap"><link rel="stylesheet" href="style.css"></head>
+<body><div id="hdr"></div><main class="w" style="padding-block:24px"><h1 style="color:var(--ink);font-size:30px">الكتب</h1>
+<div class="tools"><label for="q" style="position:absolute;left:-9999px">بحث</label><input id="q" type="search" placeholder="ابحث بعنوان الكتاب أو المؤلف"><label for="cat" style="position:absolute;left:-9999px">التصنيف</label><select id="cat"><option value="">كل التصنيفات</option></select><label for="so" style="position:absolute;left:-9999px">الترتيب</label><select id="so"><option value="new">الأحدث</option><option value="pa">السعر: الأقل أولًا</option><option value="pd">السعر: الأعلى أولًا</option></select></div>
+<div class="grid" id="g" aria-live="polite"></div></main><div id="ftr"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="config.js"></script><script src="app.js"></script>
+<script>(async()=>{const s=await settings();chrome(s);const P=new URLSearchParams(location.search);$("#q").value=P.get("q")||"";
+const c=await sb.from("categories").select("*").order("name");(c.data||[]).forEach(x=>$("#cat").add(new Option(x.name,x.id)));$("#cat").value=P.get("cat")||"";
+let t;async function go(){$("#g").innerHTML='<div class="msg">جارٍ التحميل…</div>';
+let r=sb.from("books").select(BSEL).eq("is_published",true);const k=$("#q").value.replace(/[,()%*]/g," ").trim();
+if(k)r=r.or(`title.ilike.%${k}%,author.ilike.%${k}%`);if($("#cat").value)r=r.eq("category_id",$("#cat").value);
+const o=$("#so").value;r=o==="new"?r.order("created_at",{ascending:false}):r.order("price",{ascending:o==="pa",nullsFirst:false});
+const{data,error}=await r.limit(100);$("#g").innerHTML=error?'<div class="msg err">تعذر تحميل الكتب. حاول لاحقًا.</div>':data.length?data.map(x=>card(x,s)).join(""):'<div class="msg">لا توجد كتب مطابقة.</div>'}
+$("#q").oninput=()=>{clearTimeout(t);t=setTimeout(go,300)};$("#cat").onchange=$("#so").onchange=go;go()})();</script></body></html>

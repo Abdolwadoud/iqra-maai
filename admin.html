@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>لوحة الإدارة — اقرأ معي</title><meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="assets/logo-blue.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap"><link rel="stylesheet" href="style.css"></head>
+<body><div id="login" class="w" style="max-width:420px;padding-block:40px"><img src="assets/logo-blue.png" alt="اقرأ معي" style="height:70px;margin:auto"><h2 style="text-align:center">دخول المالك</h2>
+<form id="lf" class="panel"><label for="em">البريد الإلكتروني</label><input id="em" type="email" required autocomplete="username"><label for="pw">كلمة المرور</label><input id="pw" type="password" required autocomplete="current-password"><p id="le" class="err" role="alert"></p><button class="btn" style="width:100%">دخول</button></form></div>
+<div id="app" hidden><header><div class="w bar"><img src="assets/logo-blue.png" alt=""><strong>لوحة الإدارة</strong><button class="btn l" id="out" style="margin-inline-start:auto;min-height:40px">خروج</button></div></header>
+<main class="w" style="padding-block:14px"><div class="chips" id="tabs"><button class="chip on" data-t="d">الرئيسية</button><button class="chip" data-t="b">إدارة الكتب</button><button class="chip" data-t="c">التصنيفات</button><button class="chip" data-t="s">معلومات المكتبة</button></div><div id="v"></div></main>
+<dialog id="dg"><form id="bf"><h2 id="dt"></h2><label for="f_title">عنوان الكتاب *</label><input id="f_title" required maxlength="200"><label for="f_author">المؤلف</label><input id="f_author"><label for="f_cat">التصنيف</label><select id="f_cat"></select><label for="f_price">السعر (MRU)</label><input id="f_price" type="number" min="0" step="any" inputmode="decimal"><label for="f_sale">سعر مخفض (اختياري)</label><input id="f_sale" type="number" min="0" step="any" inputmode="decimal"><label for="f_av">حالة التوفر</label><select id="f_av"><option value="unconfirmed">غير مؤكد</option><option value="available">متوفر</option><option value="unavailable">غير متوفر</option><option value="soon">قريبًا</option></select><label for="f_qty">الكمية (اختياري)</label><input id="f_qty" type="number" min="0" inputmode="numeric"><label for="f_desc">وصف الكتاب</label><textarea id="f_desc" rows="4"></textarea><label for="f_pub">الناشر</label><input id="f_pub"><label for="f_isbn">ISBN (اختياري)</label><input id="f_isbn"><label for="f_lang">اللغة</label><input id="f_lang" value="العربية"><label for="f_pages">عدد الصفحات (اختياري)</label><input id="f_pages" type="number" min="1" inputmode="numeric">
+<label><input type="checkbox" id="f_wa" checked style="width:auto;min-height:0"> تفعيل الاستفسار عبر واتساب</label><label><input type="checkbox" id="f_pb" checked style="width:auto;min-height:0"> منشور في الموقع</label>
+<label for="f_img">صورة الغلاف</label><input id="f_img" type="file" accept="image/jpeg,image/png,image/webp"><img id="f_pv" class="prev" alt="معاينة الغلاف" hidden><button type="button" class="btn d" id="f_rm" hidden>حذف الصورة</button><p id="fe" class="err" role="alert"></p>
+<div class="ar"><button class="btn" id="sv">حفظ الكتاب</button><button type="button" class="btn o" id="cn">إلغاء</button></div></form></dialog></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="config.js"></script><script src="app.js"></script>
+<script>
+let cats=[],cur=null,img=undefined; // img: undefined=بلا تغيير، null=حذف، File=جديد
+const BK="covers";
+const num=v=>v===""?null:Number(v);
+async function admin(){const{data:{session}}=await sb.auth.getSession();if(!session)return false;
+ const{data}=await sb.from("profiles").select("role").eq("id",session.user.id).maybeSingle();return data?.role==="admin"}
+async function boot(){const ok=await admin();$("#login").hidden=ok;$("#app").hidden=!ok;if(ok)tab("d")}
+$("#lf").onsubmit=async e=>{e.preventDefault();$("#le").textContent="";
+ const{error}=await sb.auth.signInWithPassword({email:$("#em").value,password:$("#pw").value});
+ if(error){$("#le").textContent="بيانات الدخول غير صحيحة.";return}
+ if(!await admin()){await sb.auth.signOut();$("#le").textContent="هذا الحساب غير مصرح له بالإدارة.";return}boot()};
+$("#out").onclick=async()=>{await sb.auth.signOut();location.reload()};
+$("#tabs").onclick=e=>{const t=e.target.dataset.t;if(t)tab(t)};
+function tab(t){document.querySelectorAll("#tabs .chip").forEach(c=>c.classList.toggle("on",c.dataset.t===t));({d:dash,b:books,c:cates,s:sets})[t]()}
+async function cnt(f){const{count,error}=await f;if(error)throw error;return count}
+async function dash(){$("#v").innerHTML="جارٍ التحميل…";try{
+ const B=()=>sb.from("books").select("*",{count:"exact",head:true});
+ const[a,av,un,c]=await Promise.all([cnt(B()),cnt(B().eq("availability_status","available")),cnt(B().eq("availability_status","unavailable")),cnt(sb.from("categories").select("*",{count:"exact",head:true}))]);
+ const{data}=await sb.from("books").select("id,title,created_at").order("created_at",{ascending:false}).limit(5);
+ $("#v").innerHTML=`<div class="stats"><div class="stat"><b>${a}</b>إجمالي الكتب</div><div class="stat"><b>${av}</b>متوفرة</div><div class="stat"><b>${un}</b>غير متوفرة</div><div class="stat"><b>${c}</b>التصنيفات</div></div><div class="panel"><strong>أحدث الكتب</strong>${(data||[]).map(x=>`<p style="margin:6px 0">${esc(x.title)}</p>`).join("")||"<p class='m'>لا توجد كتب.</p>"}</div>`}catch(e){$("#v").innerHTML='<p class="err">تعذر تحميل الإحصاءات.</p>'}}
+async function books(){const[b,c]=await Promise.all([sb.from("books").select(BSEL).order("created_at",{ascending:false}),sb.from("categories").select("*").order("name")]);cats=c.data||[];
+ $("#v").innerHTML=`<button class="btn" id="add" style="width:100%;margin-top:10px">+ إضافة كتاب جديد</button><div class="grid" id="bl">${(b.data||[]).map(x=>`<article class="card"><img src="${esc(x.cover_image_url||PH)}" alt=""><div class="cb"><h3>${esc(x.title)}</h3><div class="m">${AV[x.availability_status]}${x.is_published?"":" · مخفي"}</div><div class="ar"><button class="btn o" data-e="${x.id}">تعديل</button><button class="btn d" data-x="${x.id}">حذف</button></div></div></article>`).join("")||'<div class="msg">لا توجد كتب. اضغط «إضافة كتاب جديد».</div>'}</div>`;
+ window._b=b.data||[];$("#add").onclick=()=>openForm(null);
+ $("#bl").onclick=e=>{const i=e.target.dataset.e,x=e.target.dataset.x;if(i)openForm(_b.find(k=>k.id===i));if(x)delBook(_b.find(k=>k.id===x))}}
+function openForm(b){cur=b;img=undefined;$("#bf").reset();$("#fe").textContent="";$("#dt").textContent=b?"تعديل الكتاب":"إضافة كتاب جديد";
+ $("#f_cat").innerHTML='<option value="">بلا تصنيف</option>'+cats.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+ const m={title:"title",author:"author",desc:"description",pub:"publisher",isbn:"isbn",lang:"language",pages:"pages",price:"price",sale:"sale_price",qty:"stock_quantity",av:"availability_status"};
+ if(b){for(const k in m)$("#f_"+k).value=b[m[k]]??"";$("#f_cat").value=b.category_id||"";$("#f_wa").checked=b.whatsapp_enabled;$("#f_pb").checked=b.is_published}
+ prev(b?.cover_image_url);$("#dg").showModal()}
+function prev(u){$("#f_pv").hidden=!u;$("#f_rm").hidden=!u;if(u)$("#f_pv").src=u}
+$("#f_img").onchange=e=>{const f=e.target.files[0];if(!f)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>8e6){$("#fe").textContent="اختر صورة JPG أو PNG أو WebP لا يتجاوز حجمها 8MB.";e.target.value="";return}
+ img=f;prev(URL.createObjectURL(f))};
+$("#f_rm").onclick=()=>{img=null;$("#f_img").value="";prev(null)};
+$("#cn").onclick=()=>$("#dg").close();
+function shrink(f,w=900){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>{const r=Math.min(1,w/i.width),c=document.createElement("canvas");c.width=i.width*r;c.height=i.height*r;c.getContext("2d").drawImage(i,0,0,c.width,c.height);c.toBlob(b=>b?ok(b):no(),"image/jpeg",.82)};i.onerror=no;i.src=URL.createObjectURL(f)})}
+async function upload(f,dir){const b=await shrink(f),p=`${dir}/${crypto.randomUUID()}.jpg`;
+ const{error}=await sb.storage.from(BK).upload(p,b,{contentType:"image/jpeg"});if(error)throw error;return sb.storage.from(BK).getPublicUrl(p).data.publicUrl}
+const rmImg=async u=>{const i=u&&u.indexOf("/"+BK+"/");if(i>0)await sb.storage.from(BK).remove([u.slice(i+BK.length+2)])};
+$("#bf").onsubmit=async e=>{e.preventDefault();$("#sv").disabled=true;$("#fe").textContent="";
+ try{let url=cur?.cover_image_url||null;
+  let oldUrlToRemove=null;
+  if(img instanceof File){const n=await upload(img,"books");oldUrlToRemove=url;url=n}else if(img===null){oldUrlToRemove=url;url=null}
+  const row={title:$("#f_title").value.trim(),author:$("#f_author").value.trim()||null,description:$("#f_desc").value.trim()||null,category_id:$("#f_cat").value||null,publisher:$("#f_pub").value.trim()||null,isbn:$("#f_isbn").value.trim()||null,language:$("#f_lang").value.trim()||null,pages:num($("#f_pages").value),price:num($("#f_price").value),sale_price:num($("#f_sale").value),stock_quantity:num($("#f_qty").value),availability_status:$("#f_av").value,whatsapp_enabled:$("#f_wa").checked,is_published:$("#f_pb").checked,cover_image_url:url};
+  const{error}=cur?await sb.from("books").update(row).eq("id",cur.id):await sb.from("books").insert(row);if(error)throw error;
+  if(oldUrlToRemove)await rmImg(oldUrlToRemove);
+  $("#dg").close();books()}catch(x){$("#fe").textContent="تعذر الحفظ: "+(x.message||"خطأ غير معروف")}$("#sv").disabled=false};
+async function delBook(b){if(!confirm(`هل تريد حذف «${b.title}» نهائيًا؟ لا يمكن التراجع.`))return;
+ const{error}=await sb.from("books").delete().eq("id",b.id);if(error){alert("تعذر الحذف.");return}await rmImg(b.cover_image_url);books()}
+async function cates(){const{data}=await sb.from("categories").select("*").order("name");
+ $("#v").innerHTML=`<form id="cf" class="panel"><label for="cn2">تصنيف جديد</label><input id="cn2" required maxlength="80"><button class="btn" style="width:100%;margin-top:8px">إضافة</button></form>${(data||[]).map(c=>`<div class="panel"><strong>${esc(c.name)}</strong><div class="ar"><button class="btn o" data-r="${c.id}" data-n="${esc(c.name)}">تعديل الاسم</button><button class="btn d" data-k="${c.id}">حذف</button></div></div>`).join("")}<p id="ce" class="err" role="alert"></p>`;
+ $("#cf").onsubmit=async e=>{e.preventDefault();const{error}=await sb.from("categories").insert({name:$("#cn2").value.trim()});if(error){$("#ce").textContent="تعذر الإضافة (ربما الاسم مكرر).";return}cates()};
+ $("#v").onclick=async e=>{const r=e.target.dataset.r,k=e.target.dataset.k;
+  if(r){const n=prompt("الاسم الجديد",e.target.dataset.n);if(n&&n.trim()){const{error}=await sb.from("categories").update({name:n.trim()}).eq("id",r);if(error)$("#ce").textContent="تعذر التعديل.";else cates()}}
+  if(k){const n=await cnt(sb.from("books").select("*",{count:"exact",head:true}).eq("category_id",k));
+   if(n>0){$("#ce").textContent=`لا يمكن الحذف: يرتبط بالتصنيف ${n} كتاب. انقلها إلى تصنيف آخر أولًا.`;return}
+   if(confirm("حذف هذا التصنيف؟")){const{error}=await sb.from("categories").delete().eq("id",k);if(error)$("#ce").textContent="تعذر الحذف.";else cates()}}}}
+async function sets(){const s=await settings(),L=s.social_links||{};
+ const f=(id,l,v,t="text")=>`<label for="${id}">${l}</label><input id="${id}" type="${t}" value="${esc(v||"")}">`;
+ $("#v").innerHTML=`<form id="sf" class="panel">${f("s_name","اسم المكتبة",s.library_name)}${f("s_phone","رقم الهاتف",s.phone,"tel")}${f("s_wa","رقم واتساب (بصيغة دولية)",s.whatsapp,"tel")}${f("s_hours","ساعات العمل",s.opening_hours)}${f("s_addr","العنوان",s.address)}<label for="s_desc">وصف المكتبة</label><textarea id="s_desc" rows="3">${esc(s.description||"")}</textarea>${f("s_fb","رابط فيسبوك",L.facebook,"url")}${f("s_ig","رابط إنستغرام",L.instagram,"url")}${f("s_tt","رابط تيك توك",L.tiktok,"url")}<label for="s_logo">الشعار (صورة)</label><input id="s_logo" type="file" accept="image/jpeg,image/png,image/webp"><label for="s_hero">صورة الواجهة الرئيسية</label><input id="s_hero" type="file" accept="image/jpeg,image/png,image/webp"><p id="se" role="alert"></p><button class="btn" style="width:100%">حفظ المعلومات</button></form>`;
+ $("#sf").onsubmit=async e=>{e.preventDefault();$("#se").className="";$("#se").textContent="جارٍ الحفظ…";
+  try{const ok=["image/jpeg","image/png","image/webp"],row={id:1,library_name:$("#s_name").value.trim(),phone:$("#s_phone").value.trim(),whatsapp:$("#s_wa").value.trim(),opening_hours:$("#s_hours").value.trim(),address:$("#s_addr").value.trim(),description:$("#s_desc").value.trim(),social_links:{facebook:$("#s_fb").value.trim(),instagram:$("#s_ig").value.trim(),tiktok:$("#s_tt").value.trim()}};
+   for(const[i,k]of[["s_logo","logo_url"],["s_hero","hero_image_url"]]){const x=$("#"+i).files[0];if(!x)continue;if(!ok.includes(x.type)||x.size>8e6)throw new Error("صورة غير صالحة");row[k]=await upload(x,"site")}
+   const{error}=await sb.from("site_settings").upsert(row);if(error)throw error;$("#se").textContent="تم الحفظ.";}catch(x){$("#se").className="err";$("#se").textContent="تعذر الحفظ: "+(x.message||"")}}}
+boot();
+</script></body></html>
